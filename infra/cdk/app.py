@@ -1,15 +1,29 @@
-"""CDK app entrypoint (STUB -- cloud deploy deferred; app runs locally).
+"""CDK app entry — CarbonClarity.
 
-When implementing, uncomment and run from infra/cdk:
-    cdk bootstrap && cdk deploy
+Pinned to the PERSONAL account <APP_ACCOUNT> / ap-southeast-1, with a guardrail
+that aborts if the resolved credentials point anywhere else.
 """
-# import aws_cdk as cdk
-# from carbon_clarity_stack import CarbonClarityStack
-#
-# app = cdk.App()
-# CarbonClarityStack(app, "CarbonClarityStack",
-#                    env=cdk.Environment(region="ap-southeast-1"))
-# app.synth()
+import os
+import sys
 
-if __name__ == "__main__":
-    print("CDK deploy is deferred for this prototype. Run locally: bash scripts/dev.sh")
+import aws_cdk as cdk
+
+from carbon_clarity_stack import CarbonClarityStack
+
+ACCOUNT = "<APP_ACCOUNT>"
+REGION = "ap-southeast-1"
+
+resolved = os.environ.get("CDK_DEFAULT_ACCOUNT")
+if resolved and resolved != ACCOUNT:
+    sys.exit(
+        f"\n[GUARDRAIL] Refusing to deploy: resolved AWS account {resolved} != "
+        f"personal account {ACCOUNT}.\nUse `AWS_PROFILE=gunjan-aws cdk deploy`.\n"
+    )
+
+app = cdk.App()
+CarbonClarityStack(
+    app, "CarbonClarityStack",
+    env=cdk.Environment(account=ACCOUNT, region=REGION),
+    description="CarbonClarity — decarbonization scenario planner (personal account only)",
+)
+app.synth()

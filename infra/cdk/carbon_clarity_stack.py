@@ -1,44 +1,103 @@
-"""CarbonClarity infrastructure stack (STUB).
-
-Cloud deploy is intentionally DEFERRED for this prototype -- the app runs fully
-locally (FastAPI + Vite). This stub documents the intended serverless topology
-so it can be completed later without rearchitecting: the four handlers in
-backend/handlers/ are already plain functions ready to wrap as Lambdas.
-
-Intended resources (not yet provisioned):
-  * 4x Lambda (Python 3.12): calculate, portfolio, scenario, summary
-  * 1x API Gateway HTTP API with routes /calculate /portfolio /scenario /summary
-  * IAM: bedrock:InvokeModelWithResponseStream on the chosen Claude model
-  * data/ bundled in the Lambda zip (buildings.json, factors.json, etc.)
-
-To implement, install aws-cdk-lib and uncomment the body below.
 """
-from __future__ import annotations
+CarbonClarity CDK stack.
 
-# from aws_cdk import (
-#     Stack, Duration, CfnOutput,
-#     aws_lambda as _lambda,
-#     aws_apigatewayv2 as apigw,
-#     aws_apigatewayv2_integrations as integrations,
-#     aws_iam as iam,
-# )
-# from constructs import Construct
-#
-#
-# class CarbonClarityStack(Stack):
-#     def __init__(self, scope: Construct, cid: str, **kw) -> None:
-#         super().__init__(scope, cid, **kw)
-#         common = dict(runtime=_lambda.Runtime.PYTHON_3_12,
-#                       code=_lambda.Code.from_asset("../../backend"),
-#                       timeout=Duration.seconds(30), memory_size=256)
-#         fns = {name: _lambda.Function(self, name.title(),
-#                   handler=f"lambda_adapters.{name}_handler", **common)
-#                for name in ("calculate", "portfolio", "scenario", "summary")}
-#         fns["summary"].add_to_role_policy(iam.PolicyStatement(
-#             actions=["bedrock:InvokeModelWithResponseStream", "bedrock:InvokeModel"],
-#             resources=["*"]))
-#         api = apigw.HttpApi(self, "CarbonClarityApi")
-#         for name, fn in fns.items():
-#             api.add_routes(path=f"/{name}", methods=[apigw.HttpMethod.ANY],
-#                 integration=integrations.HttpLambdaIntegration(f"{name}Int", fn))
-#         CfnOutput(self, "ApiUrl", value=api.url or "")
+  * Lambda (Python 3.12, x86_64) running the FastAPI backend under the AWS
+    Lambda Web Adapter (zip + layer — no Docker). Function URL RESPONSE_STREAM
+    so the /summary board-narrative SSE streams natively.
+  * IAM: bedrock:InvokeModel* on Anthropic Claude (used only when USE_BEDROCK=1).
+  * Frontend: private S3 + CloudFront (OAC, HTTPS) serving frontend/dist, built
+    with VITE_API_BASE = the Function URL.
+
+Personal account <APP_ACCOUNT> / ap-southeast-1 only (see app.py guardrail +
+scripts/deploy.sh account check).
+"""
+import os
+
+from aws_cdk import (
+    Stack, Duration, CfnOutput, RemovalPolicy,
+    aws_lambda as _lambda,
+    aws_iam as iam,
+    aws_s3 as s3,
+    aws_s3_deployment as s3deploy,
+    aws_cloudfront as cf,
+    aws_cloudfront_origins as origins,
+)
+from constructs import Construct
+
+REGION = "ap-southeast-1"
+LWA_LAYER_ARN = os.environ.get(
+    "LWA_LAYER_ARN",
+    "arn:aws:lambda:ap-southeast-1:753240598075:layer:LambdaAdapterLayerX86_64:24",
+)
+
+
+class CarbonClarityStack(Stack):
+    def __init__(self, scope: Construct, cid: str, **kwargs) -> None:
+        super().__init__(scope, cid, **kwargs)
+
+        backend_asset = os.environ.get("BACKEND_ASSET", "../../build/backend")
+        frontend_asset = os.environ.get("FRONTEND_ASSET", "../../frontend/dist")
+
+        fn = _lambda.Function(
+            self, "Api",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            architecture=_lambda.Architecture.X86_64,
+            handler="lambda_function.handler",
+            code=_lambda.Code.from_asset(backend_asset),
+            timeout=Duration.seconds(60),
+            memory_size=1024,
+            environment={
+                "CARBON_DATA_DIR": "/var/task/data",
+                "LLM_ENABLED": "1",
+                "USE_BEDROCK": os.environ.get("USE_BEDROCK", "0"),
+                "BEDROCK_REGION": REGION,
+            },
+        )
+
+        fn.add_to_role_policy(iam.PolicyStatement(
+            actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+            resources=[f"arn:aws:bedrock:{REGION}::foundation-model/anthropic.*"],
+        ))
+
+        furl = fn.add_function_url(
+            auth_type=_lambda.FunctionUrlAuthType.NONE,
+            cors=_lambda.FunctionUrlCorsOptions(
+                allowed_origins=["*"],
+                allowed_methods=[_lambda.HttpMethod.ALL],
+                allowed_headers=["*"],
+            ),
+        )
+
+        site = s3.Bucket(
+            self, "Site",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            enforce_ssl=True,
+        )
+
+        dist = cf.Distribution(
+            self, "Cdn",
+            default_behavior=cf.BehaviorOptions(
+                origin=origins.S3BucketOrigin.with_origin_access_control(site),
+                viewer_protocol_policy=cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+            ),
+            default_root_object="index.html",
+            error_responses=[
+                cf.ErrorResponse(http_status=403, response_http_status=200, response_page_path="/index.html"),
+                cf.ErrorResponse(http_status=404, response_http_status=200, response_page_path="/index.html"),
+            ],
+            comment="CarbonClarity static site",
+        )
+
+        s3deploy.BucketDeployment(
+            self, "Deploy",
+            sources=[s3deploy.Source.asset(frontend_asset)],
+            destination_bucket=site,
+            distribution=dist,
+            distribution_paths=["/*"],
+        )
+
+        CfnOutput(self, "FunctionUrl", value=furl.url)
+        CfnOutput(self, "SiteUrl", value=f"https://{dist.distribution_domain_name}")
+        CfnOutput(self, "BucketName", value=site.bucket_name)

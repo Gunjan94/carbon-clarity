@@ -20,6 +20,11 @@ frontend/*.tsbuildinfo
 # CDK
 infra/**/cdk.out/
 infra/cdk.out/
+infra/cdk/.venv/
+infra/**/.venv/
+
+# Lambda build artifacts
+build/
 
 # Local AI cache + generated artifacts
 backend/.llm_cache/

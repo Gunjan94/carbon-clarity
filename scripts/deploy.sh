@@ -1,15 +1,68 @@
 #!/usr/bin/env bash
-# One-command CDK deploy wrapper (STUB).
-# Cloud deploy is intentionally DEFERRED for this prototype -- run locally with
-# scripts/dev.sh instead. The handlers are already Lambda-ready plain functions;
-# see infra/cdk/carbon_clarity_stack.py for the intended topology.
+# CarbonClarity — deploy to the PERSONAL AWS account only.
+#   Frontend: S3 + CloudFront (HTTPS).  Backend: Lambda (FastAPI via Lambda Web
+#   Adapter, Function URL streaming).  No Docker required (Linux wheels).
+#
+# Usage:  AWS_PROFILE=gunjan-aws ./scripts/deploy.sh
 set -euo pipefail
+cd "$(dirname "$0")/.."                      # scenario root
+ROOT="$(pwd)"
 
-echo "Cloud deploy is deferred for this prototype."
-echo "Run the full app locally instead:"
-echo ""
-echo "    bash scripts/dev.sh"
-echo ""
-echo "To implement cloud deploy later: complete infra/cdk/, then"
-echo "    cd infra/cdk && cdk bootstrap && cdk deploy"
-exit 0
+PROFILE="${AWS_PROFILE:-gunjan-aws}"
+ACCOUNT_EXPECTED="<APP_ACCOUNT>"
+REGION="ap-southeast-1"
+
+echo "==> 0/5  Verifying credentials point to the PERSONAL account"
+ACCT=$(aws sts get-caller-identity --profile "$PROFILE" --query Account --output text)
+if [ "$ACCT" != "$ACCOUNT_EXPECTED" ]; then
+  echo "ABORT: profile '$PROFILE' resolves to account $ACCT, expected $ACCOUNT_EXPECTED."
+  echo "       Refusing to deploy so your work account is never touched."
+  exit 1
+fi
+echo "    OK — account $ACCT (region $REGION) via profile '$PROFILE'"
+export AWS_PROFILE="$PROFILE" AWS_REGION="$REGION" CDK_DEFAULT_REGION="$REGION"
+export CDK_DEFAULT_ACCOUNT="$ACCT"
+export BACKEND_ASSET="$ROOT/build/backend"
+export FRONTEND_ASSET="$ROOT/frontend/dist"
+
+echo "==> 1/5  Packaging backend (Linux wheels — no Docker)"
+rm -rf build/backend && mkdir -p build/backend/data
+cp backend/app.py backend/llm.py backend/lambda_function.py build/backend/
+cp backend/run.sh build/backend/ && chmod +x build/backend/run.sh
+cp -r backend/handlers build/backend/handlers
+cp -r backend/engine build/backend/engine
+cp data/*.json build/backend/data/
+# strip caches that may have been copied
+rm -rf build/backend/handlers/__pycache__ build/backend/engine/__pycache__ build/backend/.llm_cache
+python3 -m pip install \
+  --platform manylinux2014_x86_64 --implementation cp --python-version 3.12 \
+  --only-binary=:all: --no-compile --upgrade --target build/backend \
+  -r backend/requirements.txt
+
+echo "==> 2/5  CDK bootstrap (idempotent) + first deploy"
+cd infra/cdk
+[ -d .venv ] || python3 -m venv .venv
+./.venv/bin/pip install --quiet -r requirements.txt
+export PATH="$PWD/.venv/bin:$PATH"
+( cd "$ROOT/frontend" && npm install >/dev/null 2>&1 || true && npm run build >/dev/null )
+cdk bootstrap "aws://$ACCOUNT_EXPECTED/$REGION" >/dev/null 2>&1 || cdk bootstrap "aws://$ACCOUNT_EXPECTED/$REGION"
+cdk deploy --require-approval never
+
+echo "==> 3/5  Reading the Function URL"
+FURL=$(aws cloudformation describe-stacks --stack-name CarbonClarityStack \
+  --query "Stacks[0].Outputs[?OutputKey=='FunctionUrl'].OutputValue" --output text)
+FURL="${FURL%/}"
+echo "    Function URL: $FURL"
+
+echo "==> 4/5  Rebuilding frontend against the live API + redeploying"
+( cd "$ROOT/frontend" && VITE_API_BASE="$FURL" npm run build >/dev/null )
+cdk deploy --require-approval never
+
+echo "==> 5/5  Done"
+SITE=$(aws cloudformation describe-stacks --stack-name CarbonClarityStack \
+  --query "Stacks[0].Outputs[?OutputKey=='SiteUrl'].OutputValue" --output text)
+echo
+echo "CarbonClarity is live:"
+echo "  Frontend : $SITE"
+echo "  API      : $FURL"
+echo "  (Bedrock live AI: redeploy with USE_BEDROCK=1 once model access is enabled.)"
