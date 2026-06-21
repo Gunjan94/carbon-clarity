@@ -16,8 +16,9 @@ import os
 import time
 from typing import Dict, Generator
 
-# Bedrock config (only used when USE_BEDROCK=1)
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-sonnet-4-6")
+# Bedrock config (only used when USE_BEDROCK=1). In ap-southeast-1 claude-sonnet-4-6
+# is invoked via its (global) inference profile, not the bare on-demand id.
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "global.anthropic.claude-sonnet-4-6")
 BEDROCK_REGION = os.environ.get("BEDROCK_REGION", "ap-southeast-1")
 
 SYSTEM_PROMPT = (
@@ -128,17 +129,16 @@ def _stream_bedrock(scenario: Dict) -> Generator[str, None, None]:
     import boto3  # imported lazily so offline mode needs no boto3
 
     client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
-    body = json.dumps({
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 600,
-        "system": SYSTEM_PROMPT,
-        "messages": [{"role": "user", "content": build_user_prompt(scenario)}],
-    })
-    resp = client.invoke_model_with_response_stream(modelId=BEDROCK_MODEL_ID, body=body)
-    for event in resp["body"]:
-        chunk = json.loads(event["chunk"]["bytes"])
-        if chunk.get("type") == "content_block_delta":
-            text = chunk.get("delta", {}).get("text")
+    # Use the modern Converse streaming API (works with the global inference profile).
+    resp = client.converse_stream(
+        modelId=BEDROCK_MODEL_ID,
+        system=[{"text": SYSTEM_PROMPT}],
+        messages=[{"role": "user", "content": [{"text": build_user_prompt(scenario)}]}],
+        inferenceConfig={"maxTokens": 600, "temperature": 0.4},
+    )
+    for event in resp["stream"]:
+        if "contentBlockDelta" in event:
+            text = event["contentBlockDelta"]["delta"].get("text")
             if text:
                 yield text
 

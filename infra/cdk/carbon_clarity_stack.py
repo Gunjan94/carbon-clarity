@@ -56,7 +56,10 @@ class CarbonClarityStack(Stack):
 
         fn.add_to_role_policy(iam.PolicyStatement(
             actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-            resources=[f"arn:aws:bedrock:{REGION}::foundation-model/anthropic.*"],
+            resources=[
+                "arn:aws:bedrock:*::foundation-model/anthropic.*",
+                f"arn:aws:bedrock:*:{self.account}:inference-profile/*",
+            ],
         ))
 
         # CORS handled by FastAPI CORSMiddleware — not on the Function URL too
