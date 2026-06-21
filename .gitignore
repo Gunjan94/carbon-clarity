@@ -1,0 +1,26 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/node_modules/.tmp/
+frontend/*.tsbuildinfo
+
+# Env / local
+*.local
+.env
+.DS_Store
+
+# Logs
+*.log
+
+# CDK
+infra/**/cdk.out/
+infra/cdk.out/
+
+# Local AI cache + generated artifacts
+backend/.llm_cache/
+data/generated/

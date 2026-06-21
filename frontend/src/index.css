@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS variables (--ink, --panel, …) are written at runtime by theme.ts
+   applyTheme(); fallbacks here keep first paint sane before JS runs. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, var(--bg-grad-a, rgba(14, 158, 118, 0.1)), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, var(--bg-grad-b, rgba(92, 107, 138, 0.08)), transparent 55%),
+    var(--bg-base, #f4f7fb);
+  color: var(--text1, #0e1a30);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Range slider styling (big touchscreen) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--line, #d5deec);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand, #0e9e76);
+  border: 3px solid var(--bg-base, #f4f7fb);
+  box-shadow: 0 0 0 4px var(--thumb-ring, rgba(14, 158, 118, 0.22)), 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.12);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand, #0e9e76);
+  border: 3px solid var(--bg-base, #f4f7fb);
+  cursor: pointer;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

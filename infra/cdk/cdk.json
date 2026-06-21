@@ -1,0 +1,4 @@
+{
+  "app": "python3 app.py",
+  "_note": "Cloud deploy deferred for this prototype. The app runs fully locally via scripts/dev.sh. This stub documents the intended serverless topology (4 Lambdas + HTTP API + Bedrock IAM)."
+}

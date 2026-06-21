@@ -1,0 +1,5 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+# boto3 is only needed when USE_BEDROCK=1 (real Amazon Bedrock streaming).
+# The app runs fully offline without it.
+boto3==1.35.92
