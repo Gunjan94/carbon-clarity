@@ -93,7 +93,7 @@ export default function App() {
       <main className="mx-auto max-w-[1500px] px-6 py-6">
         {view === "baseline" && <BaselineDashboard onBaseline={setBaseline} period={period} />}
         {view === "scenario" && <ScenarioPlanner baseline={baseline} />}
-        {view === "compliance" && <ComplianceReport />}
+        {view === "compliance" && <ComplianceReport period={period} />}
       </main>
 
       <footer className="mx-auto max-w-[1500px] px-6 py-6 text-xs text-text2">

@@ -3,12 +3,12 @@ import { getPortfolio, type PortfolioResult } from "../api";
 import { fmtTonnes } from "../format";
 import { DisclosureRegister } from "../components/DisclosureRegister";
 
-export default function ComplianceReport() {
+export default function ComplianceReport({ period = "2025-Q1" }: { period?: string }) {
   const [p, setP] = useState<PortfolioResult | null>(null);
 
   useEffect(() => {
-    getPortfolio().then(setP);
-  }, []);
+    getPortfolio(period).then(setP);
+  }, [period]);
 
   if (!p) return <div className="p-10 text-text2">Loading…</div>;
 
@@ -28,6 +28,37 @@ export default function ComplianceReport() {
     { code: "ESRS E1-6", label: "Gross Scopes 1, 2, 3 and total GHG emissions", v: total },
   ];
 
+  // Export the computed report as a CSV the user can download (no backend call).
+  function exportReport() {
+    if (!p) return;
+    const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
+    const L: string[] = [];
+    L.push("CarbonClarity — Emissions Report (Meridian Industries)");
+    L.push(`Reporting period,${p.period}`);
+    L.push(`Buildings,${p.building_count},Countries,${p.country_count}`);
+    L.push("");
+    L.push("GHG Protocol — Corporate Standard");
+    L.push("Ref,Line item,Basis,tCO2e");
+    rows.forEach((r) => L.push([r.code, esc(r.item), esc(r.basis), Math.round(r.v)].join(",")));
+    L.push(`TOTAL,${esc("Reported Scope 1+2 (market-based)")},,${Math.round(p.scope1_2_total_tco2e)}`);
+    L.push("");
+    L.push("GRI 305 / ESRS E1 — line items");
+    L.push("Ref,Line item,tCO2e");
+    gri.forEach((g) => L.push([g.code, esc(g.label), Math.round(g.v)].join(",")));
+    L.push("");
+    L.push(esc("Note: Scope 3 is a spend-based estimate; emission factors are illustrative sample values; methodology is real; synthetic data only."));
+
+    const blob = new Blob([L.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `CarbonClarity-Emissions-Report-${p.period}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6">
       {/* before/after banner */}
@@ -42,15 +73,18 @@ export default function ComplianceReport() {
             200 buildings × 15 countries · location- and market-based · multi-framework — from one engine
           </div>
         </div>
-        <button className="rounded-xl border border-line bg-panel px-5 py-3 font-semibold text-text1 hover:bg-panel2">
-          Export report
+        <button
+          onClick={exportReport}
+          className="rounded-xl border border-line bg-panel px-5 py-3 font-semibold text-text1 hover:bg-panel2"
+        >
+          ↓ Export report (CSV)
         </button>
       </div>
 
       {/* GHG Protocol table */}
       <div className="rounded-2xl border border-line bg-panel p-6">
         <h3 className="text-lg font-bold text-text1">GHG Protocol — Corporate Standard</h3>
-        <p className="text-sm text-text2">Reporting period 2025-Q1 · all figures computed from raw activity rows</p>
+        <p className="text-sm text-text2">Reporting period {p.period} · all figures computed from raw activity rows</p>
         <div className="mt-4 overflow-hidden rounded-xl border border-line">
           <table className="w-full text-left">
             <thead className="bg-panel2 text-sm text-text2">

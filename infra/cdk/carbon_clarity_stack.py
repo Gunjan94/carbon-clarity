@@ -59,13 +59,10 @@ class CarbonClarityStack(Stack):
             resources=[f"arn:aws:bedrock:{REGION}::foundation-model/anthropic.*"],
         ))
 
+        # CORS handled by FastAPI CORSMiddleware — not on the Function URL too
+        # (duplicate Access-Control-Allow-Origin headers break browser CORS).
         furl = fn.add_function_url(
             auth_type=_lambda.FunctionUrlAuthType.NONE,
-            cors=_lambda.FunctionUrlCorsOptions(
-                allowed_origins=["*"],
-                allowed_methods=[_lambda.HttpMethod.ALL],
-                allowed_headers=["*"],
-            ),
         )
 
         site = s3.Bucket(

@@ -46,10 +46,10 @@ export default function BaselineDashboard({
   const [override, setOverride] = useState<string>("");
 
   useEffect(() => {
-    // The backend serves the current (live) cycle; prior periods reuse it as the
-    // most-recent reconciled snapshot — the period switcher reflects the cockpit's
-    // reporting calendar without fabricating divergent history.
-    getPortfolio("2025-Q1").then((d) => {
+    // Fetch the selected reporting period. The engine computes the current cycle
+    // and applies a per-period trend for prior quarters, so the cockpit moves
+    // when the period changes.
+    getPortfolio(period).then((d) => {
       setP(d);
       onBaseline(d.scope1_2_total_tco2e);
       const sg = d.sites.find((s) => s.country === "SG") || d.sites[0];
