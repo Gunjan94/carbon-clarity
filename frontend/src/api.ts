@@ -70,6 +70,59 @@ export interface ScenarioResult {
   budget_remaining_usd: number;
   over_budget: boolean;
   lever_detail: LeverDetail[];
+  carbon: CarbonExposure;
+}
+
+export interface CarbonExposure {
+  price_2030_usd: number;
+  annual_exposure_no_action_usd: number;
+  annual_exposure_after_usd: number;
+  annual_avoided_usd: number;
+  cumulative_avoided_usd: number;
+}
+
+export interface SiteRow {
+  id: string;
+  country: string;
+  country_name: string;
+  type: string;
+  lat: number;
+  lng: number;
+  scope1_tco2e: number;
+  scope2_market_tco2e: number;
+  scope1_2_tco2e: number;
+  scope3_tco2e: number;
+  grid_factor: number;
+  rec_coverage_fraction: number;
+  eligible_solar_kwh: number;
+}
+
+export interface SitesResult {
+  sites: SiteRow[];
+  center: [number, number];
+  zoom: number;
+  count: number;
+  max_site_tco2e: number;
+}
+
+export interface AbatementOption {
+  lever: string;
+  label: string;
+  abatement_tco2e: number;
+  cost_usd: number;
+  cost_per_tonne_usd: number;
+  note: string;
+  cumulative_abatement_tco2e: number;
+  cumulative_cost_usd: number;
+  cumulative_reduction_pct: number;
+}
+
+export interface AbatementOptionsResult {
+  baseline_tco2e: number;
+  options: AbatementOption[];
+  total_abatement_tco2e: number;
+  total_cost_usd: number;
+  carbon_price_2030_usd: number;
 }
 
 export interface Levers {
@@ -81,6 +134,18 @@ export interface Levers {
 export async function getPortfolio(period = "2025-Q1"): Promise<PortfolioResult> {
   const r = await fetch(`${BASE}/portfolio?period=${encodeURIComponent(period)}`);
   if (!r.ok) throw new Error(`portfolio ${r.status}`);
+  return r.json();
+}
+
+export async function getSites(): Promise<SitesResult> {
+  const r = await fetch(`${BASE}/sites`);
+  if (!r.ok) throw new Error(`sites ${r.status}`);
+  return r.json();
+}
+
+export async function getAbatementOptions(baseline = 12000): Promise<AbatementOptionsResult> {
+  const r = await fetch(`${BASE}/abatement-options?baseline_tco2e=${baseline}`);
+  if (!r.ok) throw new Error(`abatement-options ${r.status}`);
   return r.json();
 }
 

@@ -1,56 +1,82 @@
 # CarbonClarity — Architecture Overview
 
+**Decarbonization planner for a Singapore-listed manufacturer ("Meridian Industries").** The emissions +
+scenario engine is the source of truth; the SGD chrome, the footprint map, the cost-per-tonne / carbon-tax
+money view, and the board summary are presentation over its real numbers. Two audiences: the **CSO** (the
+path to 40% by 2030) and the **CFO/board** (the money).
+
 ## Diagram
-
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  BROWSER (touchscreen)  —  React + TypeScript + Vite + Tailwind + Recharts │
-│  Header: Meridian Industries · theme toggle (light/dark) · period switcher │
-│                                                                            │
-│  Baseline Dashboard │ Scenario Planner (HERO) │ Compliance & │ AI Summary  │
-│        │                    │  levers/trajectory/budget  Reporting │ stream │
-│  ── presentation layer (frontend/src) ───────────  + Disclosure register   │
-│     theme.ts (palettes→CSS vars + chart Proxy) · domain.ts (entity, SGD ×,  │
-│     disclosure register data, periods) · DisclosureRegister.tsx             │
-└────────┼────────────────────┼───────────────────────────────────┼─────────┘
-         │ HTTPS/JSON         │                                    │ stream
-         ▼                    ▼                                    ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│            Amazon API Gateway (HTTP API)  —  ap-southeast-1 (Singapore)      │
-│   /calculate        /portfolio        /scenario         /summary             │
-└────────┼────────────────┼──────────────────┼──────────────────┼─────────────┘
-         ▼                ▼                  ▼                  ▼
-   Lambda calculate  Lambda portfolio  Lambda scenario   Lambda summary
-         │                │                  │                  │
-         ▼                ▼                  ▼                  │ invoke_model_
-   ┌─────────────────────────────────────────────────┐         │ with_response_
-   │  engine/  (pure Python, no I/O on the hot path)  │         │ stream
-   │  emissions.py   scenario_engine.py   factors.py  │         ▼
-   └───────────────┬─────────────────────────────────┘   ┌──────────────────┐
-                   │ loads at cold start                  │  Amazon Bedrock  │
-                   ▼                                       │  Claude          │
-   ┌───────────────────────────────────┐                  │ (sonnet-4-6 /    │
-   │  data/ (bundled JSON or S3)        │                  │  opus-4-8)       │
-   │  buildings.json (200 / 15 ctry)    │                  └────────┬─────────┘
-   │  factors.json   hero_portfolio.json│                           │ fallback
-   └───────────────────────────────────┘                  summary_cache.json
-                                                            (graceful degrade)
-   Provisioned by AWS CDK (Python).  Serverless, ~$0 idle.
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  BROWSER  (React 18 + TypeScript + Vite, Tailwind, Recharts, react-leaflet)     │
+│  ┌─────────────┐ ┌──────────────┐ ┌────────────────────────┐ ┌──────────────┐  │
+│  │ Baseline    │ │ Footprint    │ │ Scenario Planner (HERO)│ │ Compliance & │  │
+│  │ Dashboard   │ │ Map          │ │  • levers → trajectory │ │ Reporting    │  │
+│  │ (country/   │ │ (200 bldgs / │ │    vs 40%-by-2030 line │ │ (GHG/GRI/    │  │
+│  │  fuel, loc  │ │  15 ctries,  │ │  • budget meter        │ │  ESRS +      │  │
+│  │  vs market) │ │  click→site) │ │  • CFO money: MACC +   │ │  disclosure  │  │
+│  │             │ │              │ │    carbon-tax + drill  │ │  register)   │  │
+│  └──────┬──────┘ └──────┬───────┘ └───────────┬────────────┘ └──────┬───────┘  │
+│   SiteMap (Leaflet + keyless CartoDB/OSM tiles)   theme.ts (light/dark, chart    │
+│   domain.ts (SGD, entity, disclosure register, periods)            Proxy)        │
+└──────┬───────────────┬────────────────┬───────────────────────┬─────────────────┘
+   /portfolio      /sites            /scenario               /summary (SSE)
+   /calculate      /abatement-options                        (board narrative)
+       │               │                  │                       │
+       ▼               ▼                  ▼                       ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  AWS Lambda  (Python 3.12, FastAPI via Mangum, Function URL)  — app.py          │
+│   ┌──────────────────┐  ┌───────────────┐  ┌────────────────────┐               │
+│   │ engine/emissions │  │ engine/geo    │  │ handlers/summary +  │               │
+│   │  • Scope 1+2 math│  │  • country    │  │  llm.py             │               │
+│   │    (fuel×factor, │  │    centroids  │  │  • board narrative  │               │
+│   │    unit conv,    │  │  • per-bldg   │  │    grounded in the  │               │
+│   │    loc vs market,│  │    coords +   │  │    scenario numbers │               │
+│   │    RECs)         │  │    emissions  │  │  • keyless LLM (def) │               │
+│   │ engine/scenario  │  └───────┬───────┘  │    → Bedrock (opt)   │               │
+│   │  • levers→abate  │          │          └─────────┬──────────┘               │
+│   │  • MACC (cost/t) │          │ reads              │                           │
+│   │  • carbon-tax    │          ▼                    ▼                           │
+│   └───────┬──────────┘   data/buildings.json   text.pollinations.ai (keyless)    │
+│           ▼                (200 synthetic)      OR Amazon Bedrock Claude (opt)    │
+│   data/factors.json (grid + fuel factors)       data/summary_cache.json (fallback)│
+└──────────────────────────────────────────────────────────────────────────────┘
+   Region ap-southeast-1.  Frontend → private S3 + CloudFront (OAC, HTTPS).
+   AWS CDK (infra/cdk/, Python), one-command deploy. LIVE. Serverless, ~$0 idle.
 ```
 
-## Data flow narrative
-1. **Synthetic data → engine.** 200 buildings across 15 countries (with country grid factors, fuel factors, REC coverage, currencies) load from bundled JSON (or S3) into the Lambda at cold start.
-2. **Emissions engine (`/calculate`, `/portfolio`).** For each site, raw activity data (grid kWh, gas m3, diesel litres, spend) is converted to canonical units, multiplied by the correct emission factor, and split into Scope 1 (combustion), Scope 2 **location-based and market-based** (RECs applied first, then residual mix), and **estimated** Scope 3 (spend × intensity). Aggregated, the portfolio resolves to the customer's real numbers: **12,000 tCO2e Scope 1+2** and **108,000 tCO2e estimated Scope 3**. These are *computed from rows*, not stored constants.
-3. **Scenario engine (`/scenario`).** Investment levers (solar PV, fleet EV, supplier/green-power switch) map to annual abatement (tCO2e) and capital cost (USD). The engine ramps deployment linearly to 2030, recomputes the emissions trajectory, draws it against the **40%-by-2030 target line** (baseline × 0.60 = 7,200 tCO2e), and depletes the **US$10M budget** (≈ S$13.5M as displayed). Every lever change re-runs this pure function — the chart and budget meter respond instantly.
-4. **AI board summary (`/summary`).** The scenario result is passed to **Amazon Bedrock (Claude)**, which streams a board-ready narrative grounded strictly in those numbers — what the plan funds, whether it hits 40% by 2030, the residual gap, the next-best move. A cached fallback guarantees the panel never goes blank. (In this environment the grounded offline narrative serves by default; it streams from live Bedrock when `USE_BEDROCK=1` and AWS creds are configured.)
-5. **UI.** React renders all four views; the Scenario Planner is the hero, with live trajectory bending and budget depletion on a touchscreen-sized canvas. A thin **presentation layer** (`frontend/src/`) frames the cockpit as *Meridian Industries* without touching the backend:
-   - **`theme.ts`** — one source-of-truth `PALETTES` (light default, dark) written onto `<html>` as CSS variables (hex + `-rgb` channels) that `tailwind.config.js` and `index.css` consume. A live `chart` Proxy reads the *current* palette so Recharts components (which need raw colour strings) repaint on toggle. The header sun/moon button calls `toggleMode()`.
-   - **`domain.ts`** — the reporting entity, the **SGD display conversion** (`sgd`/`sgdM`, ×1.35), the disclosure-register data, and the reporting-period list. SGD is purely a display-layer conversion over the USD-computing backend; the engine never sees SGD.
-   - **`DisclosureRegister.tsx`** — renders the disclosure & assurance register at the foot of **Compliance & Reporting**. It is **static narrative context** (hand-authored framework rows + legacy-effort, no backend call) — the system-of-record / audit-trail beat, not computed output.
+## The four views, by audience
+- **CSO:** **Baseline Dashboard** (footprint by country/fuel, location vs market-based) · **Footprint Map**
+  (200 buildings across 15 countries, sized/coloured by emissions, click → per-site breakdown) · **Scenario
+  Planner** (levers → live trajectory vs the 40%-by-2030 line + budget meter + grounded board summary).
+- **CFO/board:** inside the Scenario Planner, the **"For the CFO & board"** section — **MACC** (cheapest
+  tonnes first, cost/tonne) + **carbon-tax exposure** (avoided/yr + cumulative) + a **"show how this plan
+  reaches X%"** transparency drill-down.
+- **Compliance & Reporting:** multi-framework report (GHG location+market, GRI/ESRS) + the disclosure register.
 
-## Why these choices (sustainability-specific)
-- **Serverless (Lambda + API Gateway + CDK):** one-command deploy, ~$0 idle, region-portable. A sustainability tool that itself costs almost nothing to run is on-message; CDK gives the judges a clean clone-to-run.
-- **Real emissions math over synthetic data:** the scored bar explicitly rejects hardcoded responses. The fuel × factor / unit-conversion / location-vs-market / REC pipeline is exactly the weeks-of-spreadsheet work the customer does by hand — doing it for real, instantly, is the whole value proposition and survives live input changes.
-- **Dedicated scenario engine as a pure function:** decarbonization planning is the customer's unmet need ("no way to model which investments move the needle, in what sequence"). Keeping it a deterministic, network-free function makes the hero interaction instant and unbreakable on camera.
-- **Bedrock (Claude) for the board narrative:** the audience is a board. Claude turns the engine's numbers into the language a CEO presents, grounded so it can't drift from the computed result — AI + cloud + data thoughtfully combined, not bolted on.
-- **Singapore region (ap-southeast-1):** matches the customer's HQ; falls back to us-east-1 only if Bedrock model access requires it (verified Day 1).
+## Data flow
+1. **Baseline Dashboard** → `GET /portfolio` aggregates all 200 buildings from raw activity rows →
+   **12,000 tCO2e** Scope 1+2 (+108,000 estimated Scope 3), by country/fuel, location vs market-based.
+   A reporting-period switcher re-scales every figure.
+2. **Footprint Map** → `GET /sites` (`engine/geo.py`): each building placed near its country hub
+   (deterministic jitter) with its **computed** Scope 1+2; markers sized/coloured by emissions; click →
+   `POST /calculate` for that site's breakdown (fuel × factor, unit conversion, location vs market, RECs).
+   Editing a site's activity (e.g. grid kWh) flows straight through — nothing hard-coded.
+3. **Scenario Planner** → `POST /scenario` (`engine/scenario_engine.py`): levers (solar / fleet-EV / green
+   power) → annual abatement + cost → a recomputed year-by-year trajectory vs the target line, a depleting
+   budget, **and** a `carbon` block (carbon-tax exposure no-action vs after-plan, annual + cumulative).
+   `GET /abatement-options` returns the **MACC** (each lever's cost/tonne, sorted cheapest-first, cumulative
+   %). Hero combo (Solar 60 / Fleet-EV 50 / Green-Power 40) = **41.0%** by 2030, ~S$11.7M committed.
+4. **Board summary** → `POST /summary` (SSE) streams a narrative **grounded strictly in the scenario
+   numbers** — keyless LLM by default, Amazon Bedrock Claude when `USE_BEDROCK=1`, template fallback.
+5. **Degradation:** AI falls back to the grounded template/cache; keyless map tiles; vector markers.
+
+## Why these choices
+- **Real emissions + scenario engine over a static chart** — every figure (12,000 tCO2e, 41%, the MACC,
+  the carbon-tax exposure) is computed and live, so a skeptic changing inputs can't break it.
+- **Keyless map (Leaflet + CartoDB tiles)** — the footprint map ("where are my emissions") needs no API
+  token, keeping the whole app runnable with zero credentials.
+- **Keyless LLM by default, Bedrock optional** — board narrative grounded in real numbers so it can't
+  drift; `USE_BEDROCK=1` swaps to Amazon Bedrock Claude once model access is enabled.
+- **Two-audience information architecture** — CSO path vs CFO money, clearly labelled.
+- **Serverless Lambda + Mangum, CDK one-command deploy** — already live; ~$0 idle. Synthetic data only.

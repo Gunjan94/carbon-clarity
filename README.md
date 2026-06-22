@@ -1,6 +1,8 @@
 # CarbonClarity — Enterprise Sustainability Intelligence (Meridian Industries · Singapore)
 
-CarbonClarity replaces spreadsheet-based carbon accounting with a live decarbonization planner. It ingests fragmented energy data, computes real Scope 1+2 emissions (and an estimated Scope 3) across **200 buildings in 15 countries**, and lets an executive drag investment levers to watch the emissions trajectory bend toward — or miss — the board's **40%-by-2030** target as the capital budget depletes in real time. An Amazon Bedrock (Claude) panel then streams a board-ready narrative of the chosen plan, and a **Disclosure & assurance register** shows the multi-framework reporting burden it replaces.
+CarbonClarity replaces spreadsheet-based carbon accounting with a live decarbonization planner. It ingests fragmented energy data, computes real Scope 1+2 emissions (and an estimated Scope 3) across **200 buildings in 15 countries**, plots them on a **Footprint Map**, and lets an executive drag investment levers to watch the emissions trajectory bend toward — or miss — the board's **40%-by-2030** target as the capital budget depletes in real time. For the CFO it adds a **cost-per-tonne (MACC) view** and a **carbon-tax exposure** panel; an Amazon Bedrock (Claude) panel streams a board-ready narrative; and a **Disclosure & assurance register** shows the multi-framework reporting burden it replaces.
+
+It serves **two audiences**: the **CSO** (the path to 40% — Footprint Map + Scenario Planner) and the **CFO/board** (the money — cheapest tonnes first + carbon-tax avoided). Pitched to both (see `DEMO_SCRIPT.md`), not a generic feature tour.
 
 The prototype is framed as a real **Singapore-listed manufacturer — "Meridian Industries"** — so figures read in **SGD**, the budget is **S$13.5M** (≈US$10M), and the reporting context (SGX / GHG Protocol / GRI / ESRS / IFRS S2) reads like a production sustainability cockpit. It is **pitched to the CEO/CFO** (see `DEMO_SCRIPT.md`), not presented as a generic feature tour.
 
@@ -56,20 +58,24 @@ cd frontend && npm install && npm run dev    # opens http://localhost:5173
 ```
 Regenerate the dataset any time: `cd data && python3.12 generate_data.py`.
 
-## Cloud deploy — DEFERRED (local run only)
-Cloud deploy is intentionally deferred for this prototype. `infra/cdk/` contains a documented stub of the intended serverless topology (4 Lambdas + HTTP API + Bedrock IAM); the handlers in `backend/handlers/` are already plain Lambda-ready functions. `scripts/deploy.sh` prints guidance rather than deploying.
+## Cloud deploy — LIVE
+Deployed and live (see **Live deployment** above). One command (account-guarded to <APP_ACCOUNT>):
+```bash
+AWS_PROFILE=gunjan-aws ./scripts/deploy.sh
+```
+It packages the Linux-wheel Lambda, deploys the CDK stack (`infra/cdk/` — CloudFront+S3 frontend +
+FastAPI-on-Lambda via Mangum behind a Function URL + Bedrock IAM), then rebuilds the frontend against the
+live Function URL and redeploys. `USE_BEDROCK=1 ./scripts/deploy.sh` switches the board summary to Bedrock.
 
 ## What to open for the demo
-1. Open the app (deployed URL or `localhost:5173`).
-2. Land on the **Baseline Dashboard** — confirm the hero KPIs: **12,000 tCO2e Scope 1+2**, **108,000 tCO2e estimated Scope 3**, 200 buildings, 15 countries. (Loads the seeded **hero portfolio** by default.)
-3. Go to the **Scenario Planner** (the hero view).
-4. Set the seeded **hero lever combo**:
-   - **Solar PV: 60%**
-   - **Fleet EV: 50%**
-   - **Supplier switch (green power): 40%**
-   This bends the trajectory below the 40%-by-2030 target line (~41% reduction), committing ~$8.7M of the $10M budget.
-5. Click **Generate board summary** → a board narrative grounded in those numbers streams in (live Bedrock when `USE_BEDROCK=1` + creds; otherwise the grounded offline narrative).
-6. Open **Compliance & Reporting** for the before/after (weeks → ~1.2s), the GHG/GRI/ESRS tables, and the **Disclosure & assurance register** (the reporting-risk beat).
+1. Open the app (deployed URL or `localhost:5173`). It lands on the **Footprint Map** — all 200 buildings across 15 countries, sized/coloured by emissions; click the biggest (an Indonesia site, ~202 tCO2e) for its computed breakdown. (CSO opener.)
+2. Open the **Baseline Dashboard** — hero KPIs: **12,000 tCO2e Scope 1+2**, **108,000 tCO2e Scope 3**, 200 buildings, 15 countries.
+3. Go to the **Scenario Planner** (the hero view) and set the seeded **hero lever combo**:
+   - **Solar PV: 60%** · **Fleet EV: 50%** · **Green Power: 40%**
+   This bends the trajectory below the 40%-by-2030 line (~41% reduction), committing ~S$11.7M of the S$13.5M budget.
+4. **For the CFO & board** (same view): the **cheapest tonnes first** (MACC) panel, the **carbon-tax exposure** (avoided/yr + cumulative), and **"show how this plan reaches 41%"**.
+5. Click **Generate board summary** → a grounded narrative streams (live model; Bedrock when `USE_BEDROCK=1`).
+6. Open **Compliance & Reporting** for the before/after (weeks → ~1.2s), the GHG/GRI/ESRS tables, and the **Disclosure & assurance register**.
 
 **Theme:** the sun/moon button (top-right) toggles light/dark; defaults to **light** for a clean exec look — recommended for recording.
 
@@ -77,15 +83,15 @@ Cloud deploy is intentionally deferred for this prototype. `infra/cdk/` contains
 ```
 frontend/   React + TS + Vite
   src/
-    views/        BaselineDashboard, ScenarioPlanner (hero), ComplianceReport
-    components/    TrajectoryChart, BudgetMeter, LeverSlider, BoardSummaryPanel, DisclosureRegister
+    views/        BaselineDashboard, FootprintMap (site map + drill-down), ScenarioPlanner (hero; + CFO money: MACC + carbon-tax), ComplianceReport
+    components/    SiteMap (Leaflet, keyless tiles), TrajectoryChart, BudgetMeter, LeverSlider, BoardSummaryPanel, DisclosureRegister
     theme.ts      light/dark palette source (CSS vars + live `chart` Proxy for Recharts)
     domain.ts     SG reporting context (entity, SGD conversion, disclosure register, periods)
     api.ts, format.ts
 backend/    Python Lambda handlers + emissions & scenario engines (source of truth)
 data/       synthetic dataset (200 buildings / 15 countries), factors, hero portfolio, AI cache
-infra/      AWS CDK app (serverless, ~$0 idle) — deferred stub
-scripts/    deploy.sh, dev.sh, check_bedrock.sh
+infra/      AWS CDK app (infra/cdk/, Python) — live: CloudFront+S3 + Lambda(Mangum) Function URL
+scripts/    deploy.sh (account-guarded, live), dev.sh, check_bedrock.sh
 ```
 
 **Backend is the source of truth; SGD/entity/disclosure chrome is a frontend presentation layer**

@@ -33,6 +33,50 @@ LEVERS = {
     },
 }
 
+# Blended carbon price path (USD / tCO2e), rising toward 2030. Synthetic but
+# plausible — Singapore's carbon tax alone rises to S$50–80/tCO2e by 2030; this
+# blended global figure (the portfolio spans 15 countries) is deliberately
+# conservative. Used to value the financial exposure of *not* decarbonising.
+CARBON_PRICE_USD = {2025: 18.0, 2026: 25.0, 2027: 33.0, 2028: 42.0, 2029: 52.0, 2030: 62.0}
+
+
+def abatement_options(baseline_tco2e: float = 12000.0) -> Dict:
+    """Marginal Abatement Cost Curve (MACC): each lever as an option, ordered
+    cheapest-first by cost per tonne, with cumulative abatement / cost / %.
+
+    This is the CFO's view of *which tonnes to buy first* — the cheapest
+    reductions before the expensive ones, against the fixed budget.
+    """
+    opts = []
+    for key, cfg in LEVERS.items():
+        ab = cfg["max_abatement_tco2e"]
+        cost = cfg["max_cost_usd"]
+        opts.append({
+            "lever": key,
+            "label": cfg["label"],
+            "abatement_tco2e": ab,
+            "cost_usd": cost,
+            "cost_per_tonne_usd": round(cost / ab, 1) if ab else 0,
+            "note": cfg["note"],
+        })
+    opts.sort(key=lambda o: o["cost_per_tonne_usd"])
+
+    cum_ab = 0.0
+    cum_cost = 0.0
+    for o in opts:
+        cum_ab += o["abatement_tco2e"]
+        cum_cost += o["cost_usd"]
+        o["cumulative_abatement_tco2e"] = round(cum_ab, 0)
+        o["cumulative_cost_usd"] = round(cum_cost, 0)
+        o["cumulative_reduction_pct"] = round(cum_ab / baseline_tco2e, 4) if baseline_tco2e else 0
+    return {
+        "baseline_tco2e": baseline_tco2e,
+        "options": opts,
+        "total_abatement_tco2e": round(cum_ab, 0),
+        "total_cost_usd": round(cum_cost, 0),
+        "carbon_price_2030_usd": CARBON_PRICE_USD[2030],
+    }
+
 
 def run_scenario(
     baseline_tco2e: float = 12000.0,
@@ -87,6 +131,22 @@ def run_scenario(
 
     budget_remaining = budget_usd - budget_committed
 
+    # --- Carbon-tax exposure: the cost of unabated emissions, this plan vs no action.
+    price_2030 = CARBON_PRICE_USD.get(target_year, CARBON_PRICE_USD[2030])
+    annual_exposure_no_action = baseline_tco2e * price_2030
+    annual_exposure_after = final_tco2e * price_2030
+    cumulative_avoided = 0.0
+    for pt in trajectory:
+        price = CARBON_PRICE_USD.get(pt["year"], price_2030)
+        cumulative_avoided += (baseline_tco2e - pt["tco2e"]) * price
+    carbon = {
+        "price_2030_usd": price_2030,
+        "annual_exposure_no_action_usd": round(annual_exposure_no_action, 0),
+        "annual_exposure_after_usd": round(annual_exposure_after, 0),
+        "annual_avoided_usd": round(annual_exposure_no_action - annual_exposure_after, 0),
+        "cumulative_avoided_usd": round(cumulative_avoided, 0),
+    }
+
     return {
         "baseline_tco2e": round(baseline_tco2e, 1),
         "target_pct": target_pct,
@@ -107,4 +167,5 @@ def run_scenario(
         "budget_remaining_usd": round(budget_remaining, 0),
         "over_budget": budget_committed > budget_usd,
         "lever_detail": lever_detail,
+        "carbon": carbon,
     }

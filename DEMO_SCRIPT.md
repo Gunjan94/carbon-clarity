@@ -1,170 +1,167 @@
 # CarbonClarity — Executive Pitch & Walkthrough (read-through)
 
-**The pitch, not a feature tour.** You are an AWS Innovation Hub engineer presenting to the
-**CEO / CFO of a Singapore-listed manufacturer** ("Meridian Industries"). The prototype —
-*Meridian Industries · CarbonClarity* — is the **proof** inside the pitch. Every line is spoken
-*to that executive*, about *their* board target, *their* reporting burden, *their* capital
-budget. The live demo exists to prove the claim is real.
+> **⚠️ The recording is a human task** (screen + voice-over) — this is the read-through for it.
 
-**Length:** ~8:30 spoken, inside the 10-min cap. **Arc:** their problem → the stakes → the idea →
-live proof → the business case → why now / the ask. All figures **SGD**; emissions in **tCO2e**.
+**The pitch, not a feature tour — two audiences.** You are an AWS Innovation Hub engineer presenting
+*CarbonClarity* to two leaders of a Singapore-listed manufacturer ("Meridian Industries"):
 
-**How to use this:** read the quoted lines aloud, unhurried. **[Bracketed bold]** = what to click.
-Numbers below are the live seeded values and will match the screen.
+- **The Chief Sustainability Officer (CSO)** — owns the 40%-by-2030 commitment; needs a credible,
+  modellable path and a board-ready story.
+- **The CFO / board** — owns the **S$13.5M** capital budget and the financial risk; cares about cost per
+  tonne, capital sequencing, and the carbon-tax exposure of *not* acting.
 
-> **Pre-flight:** backend `:8077`, frontend `:5173`, full-screen at the dev URL, open on the
-> **Baseline Dashboard** in **light theme**. Clean desktop, notifications off, 1080p. Dry-run the
-> three lever drags on the Scenario Planner so the curve-bend is smooth.
+The product makes both win: the CSO gets a live path to target; the CFO gets the cheapest route there and
+the tax/penalty it avoids. The live demo is the **proof**. All figures **SGD**; emissions **tCO2e**.
 
----
+**Length:** ~9:00, inside the 10-min cap. **Arc:** shared problem → CSO (the path, live) → CFO/board (the
+money) → "is it real?" → business case → why now / ask.
 
-## 0:00 – 0:50 — Open in *their* world (the cost of the status quo)
-**[On screen: Baseline Dashboard, idle. KPI row: 12,000 tCO2e Scope 1+2 · 108,000 Scope 3 · 200 buildings · 15 countries.]**
-
-> "Thanks for the time. You've made a public commitment — a forty percent cut in emissions by
-> 2030 — and your board is holding you to it. So let me start with the two problems I think you
-> live with every reporting cycle, because they're both expensive."
-
-> "First: just *producing* the number is a project. Your carbon footprint sits in spreadsheets
-> pulled from utilities, ERP systems, and regional offices across fifteen countries — reconciled
-> by hand, across currencies and units, every quarter. Second, and worse: when the board asks
-> *'which investments actually hit forty percent, and in what order?'* — nobody can answer with
-> confidence, because there's no model. You're allocating a thirteen-and-a-half-million-dollar
-> capital budget on instinct. Let me show you what it looks like when both of those become live."
+> **Pre-flight:** backend `:8077`, frontend `:5173`, full-screen, **light theme**, open on **Footprint
+> Map**. Clean desktop, notifications off, 1080p. Dry-run the three lever drags on the Scenario Planner.
 
 ---
 
-## 0:50 – 4:30 — The proof: a live, working system
+## 0:00 – 0:50 — The shared problem (both leaders are losing)
+**[On screen: Footprint Map, idle — the world map of 200 building markers.]**
 
-### Your footprint, computed — not a static chart  (~0:50 – 2:00)
-**[Hover the by-country bar chart, then the location-vs-market Scope 2 comparison.]**
-> "Everything here is computed live. Twelve thousand tonnes, broken down by country and by fuel.
-> And here's the distinction most tools get wrong — and the one your auditors care about most:
-> location-based versus market-based Scope 2. Location uses the grid average; market-based credits
-> the green-power contracts your sites have already signed. The gap between those two bars is
-> exactly what your team spends weeks reconciling by hand."
+> "Thanks for the time. Two of you are here on purpose — the sustainability lead and the CFO — because
+> you're each carrying half of the same problem."
 
-**[Click a single site (e.g. an SG building); show the breakdown rows — fuel, activity, factor, tCO2e.]**
-> "Drill into one building and you see the math itself — fuel volume, emission factor, the
-> conversion, the tonnes. Let me change an input —"
+> "You" — *to the CSO* — "made a public commitment: forty percent down by 2030, and the board holds you
+> to it. But just *producing* this quarter's number is a project — emissions sit in spreadsheets pulled
+> from utilities, ERP, and regional offices across fifteen countries, reconciled by hand. And nobody can
+> tell the board *which* investments hit forty percent, in what order."
 
-**[Edit the grid-kWh override on that site; the site total and the portfolio number both update.]**
-> "— and it recomputes. Nothing here is hard-coded. This is your actual emissions calculation,
-> running, at the level an auditor would test it."
-
-### The board's real question — the Scenario Planner  (~2:00 – 3:40)
-**[Switch to Scenario Planner. Trajectory starts ABOVE the dashed 40%-by-2030 target line; budget meter full. Pause 2s on the gap.]**
-> "Now the question the board actually cares about. Here's your emissions trajectory to 2030, and
-> here's the target line. Today, you miss it. Watch what happens as we spend the capital budget."
-
-**[Drag Solar PV to 60%. Curve bends down; budget commits; lever detail shows abatement + cost.]**
-> "Roll out rooftop solar across the portfolio — the curve bends, and part of the budget commits."
-
-**[Drag Fleet EV to 50%.]**
-> "Electrify half the fleet — that removes Scope 1 mobile combustion."
-
-**[Drag Green Power Switch to 40%. Trajectory crosses BELOW the target line; badge flips to ✓.]**
-> "And switch forty percent of grid load to contracted green power — the single biggest, cheapest
-> mover on a market-based basis. There it is: we cross below the target. Forty-one percent by 2030,
-> and we've committed about eight-point-seven million dollars, leaving room to spare in the budget."
-
-**[Nudge a lever back down so it misses again, then restore it.]**
-> "And this is real, not a slideshow — pull a lever back and you miss the target again. The engine
-> recomputes the entire trajectory *and* the budget every time. This is the model you don't have today."
-
-### From plan to board narrative — instantly  (~3:40 – 4:30)
-**[Click "Generate board summary." The grounded AI narrative streams into the panel.]**
-> "And because this ends as a board conversation, we hand the chosen plan to Amazon Bedrock —
-> Claude — grounded strictly in these computed numbers, so it can't drift from the chart."
-
-**[Let it finish; paraphrase the key line.]**
-> "In seconds: a board-ready narrative — what the plan funds, that it meets the target, the residual
-> gap, and the highest-leverage next move. The same numbers you just saw, in the language your
-> board minutes are written in. No analyst week."
+> "And you" — *to the CFO* — "are being asked to sign off thirteen-and-a-half million dollars of
+> decarbonization capital on instinct, while a rising carbon price quietly turns every unabated tonne
+> into a real liability. Let me make both of those live — on your own portfolio."
 
 ---
 
-## 4:30 – 6:00 — The business case (speak to the P&L and the risk)
-**[Switch to Compliance & Reporting. Show the GHG Protocol table, GRI/ESRS line items, the "~3 weeks → ~1.2s" banner, then scroll to the Disclosure & assurance register.]**
+## 0:50 – 4:00 — For the CSO: the path, live
 
-> "So let's talk about what this is worth, in two currencies your board understands: time and risk."
+### Where your emissions actually are  (~0:50 – 1:50)
+**[Footprint Map. Gesture across the markers; click the biggest (an Indonesia site).]**
+> "This is your whole footprint — two hundred buildings across fifteen countries — sized and coloured by
+> emissions. You've never seen it on a map before; it lived in a workbook. Straight away the eye goes to
+> the red: your top ten sites carry a huge share of the total. Click the biggest —" **[site detail opens]**
+> "— and you get its real breakdown: on-site fuel, purchased electricity, the grid factor, green-power
+> coverage, and the single biggest lever for *that* site. This is where to act first."
 
-> "On time — this quarterly report, location- and market-based, across multiple frameworks, used to
-> take weeks of reconciliation across fifteen countries. One engine, one click, and every number
-> traces back to the same calculation, so it's audit-ready."
+### The board's real question — the Scenario Planner  (~1:50 – 3:10)
+**[Switch to Scenario Planner. Trajectory starts ABOVE the dashed 40%-by-2030 line; budget meter full. Pause 2s.]**
+> "Now the question the board actually asks. Here's your trajectory to 2030, and here's the target line.
+> Today, you miss it. Watch as we spend the budget."
 
-**[Point to the Disclosure & assurance register — the framework rows with statuses and legacy effort.]**
-> "And on risk — here's your disclosure register: GHG Protocol, your SGX sustainability report,
-> GRI, ESRS, IFRS S2. Today each of these is a separate manual effort, re-keyed from the same
-> source, weeks apart, and assured by auditors line by line. That fragmentation *is* your reporting
-> risk — restatements, missed filings, qualified assurance. CarbonClarity produces all of them from
-> one reconciled calculation. You're not buying a dashboard; you're buying a single source of truth
-> for a board-level, financially-material disclosure."
+**[Drag Solar PV → 60%. Curve bends; budget commits.]** > "Rooftop solar across the portfolio — the curve bends."
+**[Drag Fleet EV → 50%.]** > "Electrify half the fleet — that removes Scope 1 combustion."
+**[Drag Green Power → 40%. Trajectory crosses BELOW target; badge flips ✓.]**
+> "And switch grid load to contracted green power — the biggest, cheapest mover. There — we cross below
+> the line. **Forty-one percent by 2030**, about **S$11.7M** of the budget committed, room to spare."
 
-> "And the capital case writes itself: you have a thirteen-and-a-half-million-dollar decarbonization
-> budget and a hard 2030 target. The difference between guessing and modelling that spend is
-> whether you hit the target on budget — or explain to the board why you missed."
+**[Nudge a lever back so it misses, then restore.]**
+> "And it's a real engine, not a slideshow — pull a lever back and you miss again; it recomputes the whole
+> trajectory *and* the budget every time. This is the model you don't have today."
 
----
-
-## 6:00 – 7:15 — Why it's low-risk to do (architecture, framed for a CEO)
-**[Show the ARCHITECTURE.md diagram, or stay on the app.]**
-
-> "Your fair question is what it takes to build, and how risky it is. The honest answer is far less
-> than you'd expect — which is the point of showing you a working system instead of slides."
-
-> "It's a clean, modern AWS stack. A web front end your sustainability and finance teams use, and a
-> Python serverless back end — Lambda behind API Gateway, deployed with one command, in Singapore,
-> your home region, at essentially zero cost when idle. Four endpoints: one runs the real emissions
-> math, one aggregates all two hundred buildings, one is the scenario engine you just watched, and
-> one calls Bedrock for the board narrative — grounded in the numbers so it can never contradict
-> your filing. It runs entirely on synthetic data here — no real data, no privacy exposure in the
-> prototype. We built this proof in days. On your real data, a focused pilot is weeks, not quarters."
+### From plan to board narrative — instantly  (~3:10 – 4:00)
+**[Click "Generate board summary." The grounded AI narrative streams.]**
+> "Because this ends as a board conversation, we hand the chosen plan to a live model — grounded strictly
+> in these computed numbers, so it can't drift from the chart. In seconds: a board-ready narrative —
+> what's funded, that it meets the target, the residual gap, the next move — in the language your board
+> minutes are written in. No analyst week."
 
 ---
 
-## 7:15 – 8:15 — Close + the ask
-**[Return to the Scenario Planner, trajectory below target, hits-target ✓ badge visible.]**
+## 4:00 – 5:30 — For the CFO & board: the money
+**[Scroll to the Scenario Planner's "For the CFO & board" section.]**
 
-> "So here's what we've done in this short time. We turned a fifteen-country reporting project into
-> one reconciled, audit-ready engine. We turned 'which investments hit forty percent by 2030' from a
-> six-week analysis into a conversation you can have live, in the room. And we turned the board
-> narrative into a thirty-second generation grounded in the real numbers."
+> "Now to you" — *to the CFO*. "Same plan, your lens: is this the *cheapest* way to forty percent, and
+> what does inaction cost?"
 
-> "What I'd propose is simple: let us run CarbonClarity against one region of your *real* operations
-> in a focused pilot. You'll see your actual footprint reconciled, your actual investment options
-> modelled against the 2030 target and your real budget, and a board-ready disclosure pack out the
-> other end. If the pilot does on your data what this prototype does, you'll have the business case
-> to roll it across the group."
+**[Point to the "Cheapest tonnes first" (MACC) panel.]**
+> "This ranks every lever by **cost per tonne** — green power first at about US$750 a tonne, then solar,
+> then fleet EV. It tells you the order to buy reductions in, so the budget goes to the cheapest tonnes
+> before the expensive ones. That's capital allocation, not guesswork."
 
-> "The target is already public. The only open question is whether you'll steer the spend with a
-> model — or find out in 2030 whether you guessed right. That's CarbonClarity. I'd love to scope the
-> pilot with your team."
+**[Point to the Carbon-tax exposure panel.]**
+> "And here's the risk side. At a 2030 carbon price around US$60 a tonne, doing nothing carries a real
+> annual liability. This plan **avoids about S$X a year**, and roughly **S$Y cumulatively to 2030** —
+> that's the tax and penalty you *don't* pay by hitting the target. The decarbonization budget isn't a
+> cost line; it's hedging a financial exposure that's only going up."
 
-**[Hold on the hits-target ✓ badge for a beat, then stop recording.]**
+**[Click "show how this plan reaches 41%".]**
+> "And it's fully transparent — every lever's tonnes and dollars, summed to the total. Nothing hidden."
+
+---
+
+## 5:30 – 7:00 — The business case (time + risk + capital)
+**[Switch to Compliance & Reporting — GHG table, GRI/ESRS line items, "~3 weeks → ~1.2s" banner, Disclosure register.]**
+
+> "So what's it worth, in the two currencies your board understands — time and risk?"
+
+> "Time: this quarterly report, location- and market-based, across five frameworks, used to take weeks of
+> reconciliation across fifteen countries. One engine, one click, every number tracing to the same
+> calculation — audit-ready."
+
+**[Point to the Disclosure & assurance register.]**
+> "Risk: today GHG Protocol, your SGX report, GRI, ESRS, IFRS S2 are five separate manual efforts off the
+> same source, assured line by line. That fragmentation *is* reporting risk — restatements, missed
+> filings, qualified assurance. One reconciled engine collapses it. You're buying a single source of truth
+> for a board-level, financially-material disclosure — and a model that tells the CFO the cheapest route
+> to a target the CSO has already promised."
+
+---
+
+## 7:00 – 8:10 — Why it's low-risk to build (architecture, for execs)
+**[ARCHITECTURE.md diagram, or stay on the app.]**
+
+> "What does it take, and how risky? Less than you'd expect — which is why I'm showing a working system.
+> A clean AWS stack: a web front end your sustainability and finance teams share, a Python serverless
+> back end on Lambda in Singapore, near-zero idle cost, one-command deploy — in fact it's **already live**
+> on a public URL. Endpoints run the real emissions math, aggregate all 200 buildings, drive the scenario
+> engine and the cost-per-tonne / carbon-tax model, and call a live model for the board narrative —
+> grounded so it can never contradict your filing. Synthetic data here; no privacy exposure. Built in
+> days; a pilot on your real data is weeks, not quarters."
+
+---
+
+## 8:10 – 9:00 — Close + the ask
+**[Return to the Scenario Planner, trajectory below target, ✓ badge visible.]**
+
+> "So here's what we've done. For the sustainability lead: a fifteen-country reporting project became one
+> reconciled engine, and 'which investments hit forty percent' became a live conversation. For the CFO:
+> the cheapest path to that target, and the carbon-tax exposure it hedges — on screen, defensible."
+
+> "The ask is simple: let us run CarbonClarity against one region of your *real* operations — your actual
+> footprint reconciled, your actual options modelled against the 2030 target and your real budget, with a
+> board-ready disclosure pack out the other end. If it does on your data what it does here, you've got the
+> case to roll it across the group. The target is public; the only question is whether you steer the spend
+> with a model — or find out in 2030 whether you guessed right."
+
+**[Hold on the ✓ badge, then stop recording.]**
 
 ---
 
 ## Click-cue cheat sheet
-1. **Open** on Baseline Dashboard, light theme — don't interact during the 0:00 framing.
-2. **Baseline:** by-country chart → location-vs-market bars → click a site → edit grid-kWh → totals recompute.
-3. **Scenario Planner (hero):** Solar 60% → Fleet EV 50% → Green Power 40% → crosses below target (41%, ✓) → nudge a lever back to miss → restore.
-4. **AI board summary:** click Generate → let it stream.
-5. **Compliance & Reporting:** GHG table → GRI/ESRS → "~3 weeks → ~1.2s" banner → **Disclosure & assurance register** (the risk beat).
-6. **Architecture:** diagram or stay on app while narrating.
-7. **Close:** Scenario Planner with ✓ badge — deliver the pilot ask, hold, stop.
-8. **Theme:** sun/moon button (top-right) toggles light/dark — record in **light**.
+1. **Open** on Footprint Map, light theme — don't interact during 0:00.
+2. **Footprint Map (CSO hero):** gesture across markers → click biggest site → site breakdown panel.
+3. **Scenario Planner (CSO hero):** Solar 60 → Fleet EV 50 → Green Power 40 → crosses below target (41%, ✓) → nudge a lever to miss → restore → **Generate board summary**.
+4. **"For the CFO & board" section (CFO money):** MACC "cheapest tonnes first" → carbon-tax exposure (avoided/yr + cumulative) → "show how this plan reaches 41%".
+5. **Compliance & Reporting:** GHG table → GRI/ESRS → "~3 weeks → ~1.2s" → Disclosure & assurance register.
+6. **Architecture** → **Close:** Scenario Planner ✓ badge, pilot ask, hold, stop.
+7. **Theme:** sun/moon toggles light/dark — record in **light**.
 
 ## Numbers cheat sheet (verified live — should match screen)
-- **Baseline:** Scope 1+2 **12,000 tCO2e**, Scope 3 **108,000 tCO2e**, **200** buildings, **15** countries.
-- **Hero combo (Solar 60 / Fleet EV 50 / Green Power 40):** **41.0%** reduction by 2030 ✓, committed **~S$11.7M** of the **S$13.5M** budget (≈US$8.68M of US$10M), target hit.
-- **Reporting:** multi-framework report generated in **~1.2s** vs **~3 weeks** manual; disclosure register lists GHG Protocol / SGX / GRI / ESRS / IFRS S2.
-- **Note:** budget shown in SGD (≈1.35× the engine's USD figures); emissions math is real, factors illustrative.
+- **Baseline:** Scope 1+2 **12,000 tCO2e**, Scope 3 **108,000**, **200** buildings, **15** countries.
+- **Footprint map:** top emitter ≈ **202 tCO2e** (Indonesia site); top-10 sites carry a large share.
+- **Hero combo (Solar 60 / Fleet EV 50 / Green Power 40):** **41.0%** by 2030 ✓, committed **~S$11.7M** of **S$13.5M** (≈US$8.68M of US$10M).
+- **MACC (cheapest first):** Green Power ≈ **US$752/t** → Solar ≈ **US$3,091/t** → Fleet EV ≈ **US$4,259/t**.
+- **Carbon tax:** 2030 price ≈ **US$62/t**; the hero plan avoids a recurring annual exposure (read the live SGD figure off the panel; ≈US$305k/yr at the hero combo) plus a cumulative-to-2030 figure.
+- **Reporting:** multi-framework report in **~1.2s** vs **~3 weeks**; register lists GHG / SGX / GRI / ESRS / IFRS S2.
+- **Note:** budget/money shown SGD (≈1.35× engine USD); emissions math real, factors illustrative.
 
-## Delivery notes — this is a pitch, perform it like one
-- **Talk to the CEO/CFO, not the screen.** Tie every number to *their* board target, reporting risk, and capital budget.
-- **Stakes early, ask late.** Open on the cost of the status quo; close on a concrete regional pilot.
-- **The curve-bend is the hero beat** — let it land; pause on the ✓. The "pull a lever back and miss" move sells that it's real.
-- Architecture is reassurance ("low-risk, fast, audit-ready"), not a tech lecture.
-- The AI runs as a **grounded narrative**; if asked, it streams live on Bedrock when AWS creds + model access are configured (`USE_BEDROCK=1`) — today it serves the grounded offline narrative. **Don't claim "live Bedrock" unless it's actually configured.**
-- Hard cap **10:00**; aim for **~8:15**. Rehearse the **first and last 30 seconds**.
+## Delivery notes
+- **Address both leaders out loud** ("to the CSO…" / "to the CFO…") so the two-audience structure is unmistakable. The **Footprint Map** is the opener — let it land before narrating.
+- **Stakes early, ask late.** The curve-bend + the ✓ is the hero; the "pull a lever back and miss" sells that it's real; the carbon-tax panel is the CFO's money-on-screen.
+- The board summary runs as a **grounded live model**; Bedrock when credentialed (`USE_BEDROCK=1`). Don't claim "live Bedrock" unless configured.
+- Hard cap **10:00**; aim **~9:00**. Rehearse the first and last 30 seconds.

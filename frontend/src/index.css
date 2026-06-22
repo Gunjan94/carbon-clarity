@@ -59,3 +59,23 @@ input[type="range"]::-moz-range-thumb {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Keep Leaflet map panes + controls beneath the sticky app header. */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 5 !important;
+}
+.leaflet-container {
+  font: inherit;
+  background: var(--panel2, #edf2f9);
+}
+
+/* Hide scrollbar on the horizontally-scrollable mobile tab nav. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

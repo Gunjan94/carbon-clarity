@@ -41,6 +41,19 @@ def portfolio_route(period: str = "2025-Q1", portfolio_name: str = "hero"):
     return portfolio.handle({"period": period, "portfolio": portfolio_name})
 
 
+@app.get("/sites")
+def sites_route():
+    from engine.data_loader import load_buildings
+    from engine.geo import build_site_map
+    return build_site_map(load_buildings())
+
+
+@app.get("/abatement-options")
+def abatement_options_route(baseline_tco2e: float = 12000.0):
+    from engine.scenario_engine import abatement_options
+    return abatement_options(baseline_tco2e)
+
+
 @app.post("/scenario")
 async def scenario_route(request: Request):
     body = await request.json()

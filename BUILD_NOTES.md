@@ -1,3 +1,10 @@
+> **Current-state addendum (2026-06-22).** Kept as build history. For the current build see **README.md**,
+> **ARCHITECTURE.md**, **DEMO_SCRIPT.md**. Net change: added the **Footprint Map** (`/sites`), **MACC** +
+> **carbon-tax** CFO money (`/abatement-options` + `/scenario` carbon block), transparency drill-down, and
+> two-audience framing. **Live:** https://dmcdmig1u0vv9.cloudfront.net.
+
+---
+
 # CarbonClarity — Build Notes
 
 What was actually built, how to run it, what is real vs mocked, and the

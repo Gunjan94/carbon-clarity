@@ -1,14 +1,16 @@
 import { useState } from "react";
 import BaselineDashboard from "./views/BaselineDashboard";
+import FootprintMap from "./views/FootprintMap";
 import ScenarioPlanner from "./views/ScenarioPlanner";
 import ComplianceReport from "./views/ComplianceReport";
 import { ENTITY, PERIODS } from "./domain";
 import { getMode, toggleMode, type Mode } from "./theme";
 
-type View = "baseline" | "scenario" | "compliance";
+type View = "baseline" | "footprint" | "scenario" | "compliance";
 
 const TABS: { id: View; label: string }[] = [
   { id: "baseline", label: "Baseline Dashboard" },
+  { id: "footprint", label: "Footprint Map" },
   { id: "scenario", label: "Scenario Planner" },
   { id: "compliance", label: "Compliance & Reporting" },
 ];
@@ -25,25 +27,25 @@ export default function App() {
         className="sticky top-0 z-10 border-b border-line backdrop-blur"
         style={{ background: "var(--header-bg)" }}
       >
-        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-xl font-extrabold text-ink">
               C
             </div>
             <div>
-              <div className="text-xl font-extrabold tracking-tight">
+              <div className="text-lg font-extrabold tracking-tight sm:text-xl">
                 {ENTITY.name} <span className="font-medium text-text2">· CarbonClarity</span>
               </div>
               <div className="text-xs text-text2">Enterprise sustainability intelligence · {ENTITY.hq}</div>
             </div>
           </div>
 
-          <nav className="flex gap-1 rounded-xl border border-line bg-panel p-1">
+          <nav className="no-scrollbar order-3 flex max-w-full gap-1 overflow-x-auto rounded-xl border border-line bg-panel p-1 lg:order-none">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setView(t.id)}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition sm:px-4 ${
                   view === t.id ? "bg-brand text-ink" : "text-text2 hover:text-text1"
                 }`}
               >
@@ -90,8 +92,9 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-6 py-6">
+      <main className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 sm:py-6">
         {view === "baseline" && <BaselineDashboard onBaseline={setBaseline} period={period} />}
+        {view === "footprint" && <FootprintMap />}
         {view === "scenario" && <ScenarioPlanner baseline={baseline} />}
         {view === "compliance" && <ComplianceReport period={period} />}
       </main>

@@ -1,3 +1,11 @@
+> **Current-state addendum (2026-06-22).** This build write-up predates the 2026-06-22 upgrade. Authoritative
+> current docs: **README.md**, **ARCHITECTURE.md**, **DEMO_SCRIPT.md**. What changed: added a **Footprint Map**
+> (200 buildings / 15 countries, `GET /sites`), a **cost-per-tonne (MACC)** view + **carbon-tax exposure** for
+> the CFO (`GET /abatement-options` + a `carbon` block on `/scenario`), a transparency drill-down, and explicit
+> **two-audience** framing (CSO path / CFO money). **Deployed & live:** https://dmcdmig1u0vv9.cloudfront.net.
+
+---
+
 # CarbonClarity — Build Approach & Considerations
 
 *Deliverable write-up (1–2 pages). Pre-filled where determinable; `[fill after building]` where real results are needed.*
