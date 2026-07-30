@@ -29,3 +29,13 @@ build/
 # Local AI cache + generated artifacts
 backend/.llm_cache/
 data/generated/
+
+# --- Security hardening (added during repo audit) ---
+.env
+.env.local
+.env.*.local
+backend/.env.local
+*.pem
+*_accessKeys.csv
+aws_credentials*
+Submission_for_*/
